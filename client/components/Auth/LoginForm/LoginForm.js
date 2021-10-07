@@ -3,14 +3,14 @@ import { Form, Button } from "semantic-ui-react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
-import { loginApi } from "../../../api/user";
+import { loginApi, resetPasswordApi } from "../../../api/user";
 import useAuth from "../../../hooks/useAuth";
 
 export default function LoginForm(props) {
 
     const { showRegisterForm, onCloseModal } = props; 
     const [loading, setLoading] = useState(false);
-    const auth = useAuth();
+    const { auth, login } = useAuth();
 
     const formik = useFormik({
         initialValues: initialValues(FormData),
@@ -20,7 +20,7 @@ export default function LoginForm(props) {
             const response = await loginApi(formData);
 
             if (response?.jwt) {
-                console.log("Login OK");
+                login(response.jwt);
                 onCloseModal();
             } else {
                 toast.error("El correo electrónico y/o la contraseña son incorrectos.");
@@ -28,6 +28,18 @@ export default function LoginForm(props) {
             setLoading(false);
         }
     });
+
+    const resetPassword = () => {
+        formik.setErrors({});
+        const validateEmail = Yup.string().email().required();
+
+        if (validateEmail.isValidSync(formik.values.identifier)) {
+            formik.setErrors({ identifier: true})
+        } else {
+            resetPasswordApi(formik.values.identifier);
+        }
+
+    }
 
     return (
         <Form className = "login-form" onSubmit = {formik.handleSubmit}>
@@ -37,7 +49,7 @@ export default function LoginForm(props) {
             <div className = "actions">
                 <Button type = "button" basic onClick = {showRegisterForm}>Registrarse</Button>
                 <div>
-                    <Button type = "button">¿Has olvidado la contraseña?</Button>
+                    <Button type = "button" onClick = {resetPassword}>¿Has olvidado la contraseña?</Button>
                     <Button className = "submit" type = "submit" loading = {loading}>Entrar</Button>
                 </div>
             </div>
